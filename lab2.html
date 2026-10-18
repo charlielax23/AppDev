@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <title>Lab 2: Authentication vs. authorization</title>
+</head>
+<body>
+  <header class="bar">
+    <nav>
+      <b>Cloud Database Labs</b>
+      <a href="index.html">Home</a>
+      <a href="lab1.html">Lab 1</a>
+      <a href="lab2.html" aria-current="page">Lab 2</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Lab 2: Authentication vs. authorization</h1>
+    <p class="lead">Authentication (AuthN) answers <em>who are you?</em> Authorization (AuthZ) answers <em>what are you allowed to do?</em> AuthN always comes first, because a system cannot decide what you may do until it knows who you are.</p>
+    
+    <h2>Comparison</h2>
+    <table>
+      <tr><th></th><th>Authentication (AuthN)</th><th>Authorization (AuthZ)</th></tr>
+      <tr><th>Question</th><td>Who are you?</td><td>What may you do?</td></tr>
+      <tr><th>Checks</th><td>Credentials: password, code, fingerprint</td><td>Roles, permissions, ownership</td></tr>
+      <tr><th>When</th><td>At sign-in</td><td>On every action, after sign-in</td></tr>
+      <tr><th>If it fails</th><td>401 Unauthorized: identity not proven</td><td>403 Forbidden: identity known, action not allowed</td></tr>
+      <tr><th>Example</th><td>A student signs in with email and password</td><td>That student cannot create a class</td></tr>
+      <tr><th>In my system</th><td>Supabase Auth (<code>signInWithPassword</code>, a signed token)</td><td>The <code>role</code> on each profile, RLS policies such as <code>owns_class()</code>, and route guards</td></tr>
+    </table>
+    
+    <div class="note">Both demos run in your browser to show the idea. Real checks must happen on the server, because anything in browser code can be changed by the user.</div>
+    
+    <h2>Try the demos</h2>
+    <div class="tiles">
+      <a href="authn.html"><b>Authentication demo</b><span>Sign in with right and wrong passwords, with a 5-attempt lock.</span></a>
+      <a href="authz.html"><b>Authorization demo</b><span>Pick a role and try actions. See allowed or denied, and why.</span></a>
+    </div>
+  </main>
+  <footer>Submitted by: Artates, Delacruz V., Laxamana &middot; BSIT 3</footer>
+</body>
+</html>

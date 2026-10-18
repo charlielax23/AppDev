@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <title>Demo: Authorization</title>
+</head>
+<body>
+  <header class="bar">
+    <nav>
+      <b>Cloud Database Labs</b>
+      <a href="index.html">Home</a>
+      <a href="lab1.html">Lab 1</a>
+      <a href="lab2.html" aria-current="page">Lab 2</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Authorization demo</h1>
+    <p class="lead">Authorization decides what a known user may do. Choose who is acting, then try each action.</p>
+    
+    <div class="panel">
+      <label for="who">Acting as</label>
+      <select id="who">
+        <option value="">Nobody (not signed in)</option>
+        <option value="juan@demo.test">Juan (student)</option>
+        <option value="prof.a@demo.test">Prof. A (professor)</option>
+        <option value="admin@demo.test">Admin</option>
+      </select>
+      <div id="btns"></div>
+      <div id="out" class="out" role="status"></div>
+    </div>
+    
+    <table>
+      <tr><th>Action</th><th>Rule</th></tr>
+      <tr><td>View my own scores</td><td>Any signed-in role</td></tr>
+      <tr><td>Join a class</td><td>Students</td></tr>
+      <tr><td>Create a class, edit my class</td><td>Professors (RLS: the class must be theirs)</td></tr>
+      <tr><td>View activity logs, change branding</td><td>Admin</td></tr>
+    </table>
+    
+    <script>
+    const U = {
+      'juan@demo.test': ['Juan', 'student'],
+      'prof.a@demo.test': ['Prof. A', 'professor'],
+      'admin@demo.test': ['Admin', 'admin']
+    };
+    const A = [
+      ['View my own scores', ['student', 'professor', 'admin']],
+      ['Join a class', ['student']],
+      ['Create a class', ['professor']],
+      ['Edit my class (ICT-101, owned by Prof. A)', ['professor'], 'prof.a@demo.test'],
+      ['Edit another professor\'s class (MATH-2)', ['professor'], 'nobody-here'],
+      ['View activity logs', ['admin']],
+      ['Change site branding', ['admin']]
+    ];
+    
+    const w = document.getElementById('who'), out = document.getElementById('out');
+    const s = sessionStorage.getItem('demoUser');
+    if (s) w.value = s;
+    
+    document.getElementById('btns').innerHTML = A.map((a, i) => '<button data-i="' + i + '">' + a[0] + '</button>').join('');
+    
+    document.getElementById('btns').onclick = e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      const a = A[b.dataset.i], u = U[w.value];
+      if (!u) return (out.className = 'out no', out.textContent = '401 Unauthorized: no identity. Sign in first (authentication).');
+      const [name, role] = u;
+      if (!a[1].includes(role)) return (out.className = 'out no', out.textContent = '403 Forbidden: ' + name + ' is a ' + role + ', and "' + a[0] + '" needs: ' + a[1].join(' or ') + '.');
+      if (a[2] && a[2] !== w.value) return (out.className = 'out no', out.textContent = '403 Forbidden: the role fits, but ' + name + ' does not own this class (ownership check).');
+      out.className = 'out ok';
+      out.textContent = 'Allowed: ' + name + ' (' + role + ') may "' + a[0] + '".';
+    };
+    </script>
+  </main>
+  <footer>Submitted by: Artates, Delacruz V., Laxamana &middot; BSIT 3</footer>
+</body>
+</html>

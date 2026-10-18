@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <title>Demo: Authentication</title>
+</head>
+<body>
+  <header class="bar">
+    <nav>
+      <b>Cloud Database Labs</b>
+      <a href="index.html">Home</a>
+      <a href="lab1.html">Lab 1</a>
+      <a href="lab2.html" aria-current="page">Lab 2</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Authentication demo</h1>
+    <p class="lead">Authentication proves who you are. Try the demo accounts below.</p>
+    <div class="note">Demo accounts: <code>juan@demo.test</code> / <code>Student#123</code> and <code>prof.a@demo.test</code> / <code>Prof#12345</code>. Passwords sit in this page only for the demo. A real system never stores plain passwords.</div>
+    
+    <form id="f">
+      <label for="em">Email</label>
+      <input id="em" type="email" autocomplete="off" required>
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="off" required>
+      <button>Sign in</button>
+      <div id="out" class="out" role="status"></div>
+      <ol id="tr" class="trace"></ol>
+    </form>
+    
+    <p id="next" hidden>Next: <a href="authz.html">see what this user is allowed to do</a>.</p>
+    
+    <script>
+    const U = {
+      'juan@demo.test': { p: 'Student#123', n: 'Juan Dela Cruz', r: 'student' },
+      'prof.a@demo.test': { p: 'Prof#12345', n: 'Prof. A', r: 'professor' }
+    };
+    let fails = 0;
+    const out = document.getElementById('out'), tr = document.getElementById('tr');
+    
+    function show(c, t, steps) {
+      out.className = 'out ' + c;
+      out.textContent = t;
+      tr.innerHTML = steps.map(s => '<li>' + s + '</li>').join('');
+    }
+    
+    document.getElementById('f').onsubmit = e => {
+      e.preventDefault();
+      if (fails >= 5) return show('no', 'Locked after 5 wrong attempts. A real system would unlock after a wait (reload to reset this demo).', ['Attempts used: 5 of 5']);
+      const m = em.value.trim().toLowerCase(), u = U[m], found = !!u, ok = found && u.p === pw.value;
+      const steps = [
+        '1. Look up the account: ' + (found ? 'found' : 'not found'),
+        '2. Compare the password: ' + (!found ? 'skipped' : ok ? 'match' : 'does not match')
+      ];
+      if (ok) {
+        fails = 0;
+        sessionStorage.setItem('demoUser', m);
+        steps.push('3. Issue a session token for ' + u.n);
+        show('ok', 'Authenticated as ' + u.n + '. The system now knows who you are, but not yet what you may do.', steps);
+        next.hidden = false;
+        return;
+      }
+      fails++;
+      steps.push('3. Reject. Attempts used: ' + fails + ' of 5');
+      show('no', 'Incorrect email or password.', steps);
+    };
+    </script>
+  </main>
+  <footer>Submitted by: Artates, Delacruz V., Laxamana &middot; BSIT 3</footer>
+</body>
+</html>

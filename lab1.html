@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <title>Lab 1: Connecting to a cloud database</title>
+</head>
+<body>
+  <header class="bar">
+    <nav>
+      <b>Cloud Database Labs</b>
+      <a href="index.html">Home</a>
+      <a href="lab1.html" aria-current="page">Lab 1</a>
+      <a href="lab2.html">Lab 2</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Lab 1: How my system connects to its cloud database</h1>
+    <p class="lead">NOAH Glacier is an Ionic/Angular app. Its data lives in Supabase, a cloud PostgreSQL database. These are the steps I followed to connect the two.</p>
+    
+    <h2>How the pieces fit</h2>
+    <pre>Ionic/Angular app
+   |  supabase-js  (Project URL + anon key)
+   v
+Supabase cloud:  Auth | REST API | Storage | Edge Functions
+   |  Row Level Security checks every request
+   v
+PostgreSQL database</pre>
+
+    <h2>Steps</h2>
+    <ol class="steps">
+      <li>
+        <h3>Create the cloud project</h3>
+        Sign in at supabase.com and choose <em>New project</em>. Pick a region close to your users and set a strong database password. Save the password, then wait until the project finishes setting up.
+      </li>
+      <li>
+        <h3>Create the tables and the security rules</h3>
+        Open <em>SQL Editor</em>, then paste and run <code>schema.sql</code> (tables) followed by <code>policies.sql</code> (Row Level Security). RLS decides which rows each signed-in user may read or change.
+      </li>
+      <li>
+        <h3>Copy the two connection values</h3>
+        Go to <em>Project Settings, API</em> and copy the <strong>Project URL</strong> and the <strong>anon public key</strong>.
+        <div class="note">The <code>service_role</code> key bypasses all security. It must never be placed in the app or on GitHub.</div>
+      </li>
+      <li>
+        <h3>Install the client library</h3>
+        <pre><code>npm install @supabase/supabase-js</code></pre>
+      </li>
+      <li>
+        <h3>Store the values in the app's configuration</h3>
+        <pre><code>// src/environments/environment.ts
+export const environment = {
+  supabaseUrl: 'https://YOUR-PROJECT-REF.supabase.co',
+  supabaseAnonKey: 'YOUR-ANON-PUBLIC-KEY'
+};</code></pre>
+      </li>
+      <li>
+        <h3>Create one shared client</h3>
+        I create it once inside <code>AuthService</code>, so every page reuses the same signed-in connection.
+        <pre><code>import { createClient } from '@supabase/supabase-js';
+
+readonly supabase = createClient(
+  environment.supabaseUrl,
+  environment.supabaseAnonKey
+);</code></pre>
+      </li>
+      <li>
+        <h3>Read and write data</h3>
+        Queries look like this. RLS makes the database return only the rows the current user is allowed to see.
+        <pre><code>const { data, error } = await this.auth.supabase
+  .from('classes')
+  .select('*')
+  .order('created_at', { ascending: false });</code></pre>
+      </li>
+      <li>
+        <h3>Sign users in</h3>
+        <pre><code>const { data, error } = await this.supabase.auth
+  .signInWithPassword({ email, password });</code></pre>
+        After sign-in, supabase-js attaches the user's token to every request automatically.
+      </li>
+      <li>
+        <h3>Add server-side logic with Edge Functions</h3>
+        Work that must not run in the browser (grading a quiz, checking a QR code) runs in an Edge Function.
+        <pre><code>supabase login
+supabase link --project-ref YOUR-PROJECT-REF
+supabase secrets set QR_SIGNING_SECRET=a-long-random-value
+supabase functions deploy manage-attendance-session</code></pre>
+        The app calls it with <code>this.supabase.functions.invoke('manage-attendance-session', { body })</code>.
+      </li>
+      <li>
+        <h3>Check that the connection works</h3>
+        <ul>
+          <li>Sign in and open a page that lists data. Rows should appear.</li>
+          <li>Sign in as a different user. That user should see different rows (RLS at work).</li>
+          <li>In the browser's Network tab, requests go to <code>YOUR-PROJECT-REF.supabase.co</code>.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h2>Common problems</h2>
+    <table>
+      <tr><th>What you see</th><th>Likely cause</th><th>Fix</th></tr>
+      <tr><td>A query returns an empty list, no error</td><td>No RLS policy allows this user to read the table</td><td>Check the policies and make sure the user is signed in</td></tr>
+      <tr><td>401 or "permission denied"</td><td>Wrong anon key, or not signed in</td><td>Recopy the key from Project Settings, API</td></tr>
+      <tr><td>Edge Function blocked in the browser (CORS)</td><td>The preflight request has no token</td><td>Let the OPTIONS request through and verify the user inside the function</td></tr>
+      <tr><td>Edge Function says "Unknown action"</td><td>The deployed function is older than the app</td><td>Redeploy it with <code>supabase functions deploy</code></td></tr>
+    </table>
+  </main>
+  <footer>Submitted by: Artates, Delacruz V., Laxamana &middot; BSIT 3</footer>
+</body>
+</html>
